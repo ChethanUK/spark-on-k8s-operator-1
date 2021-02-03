@@ -14,26 +14,48 @@
 # limitations under the License.
 #
 
-ARG SPARK_IMAGE=gcr.io/spark-operator/spark:v3.1.1
+ARG SPARK_IMAGE=chethanuk/spark:v3.1.1
+
 FROM ${SPARK_IMAGE}
+
+# Versions
+ARG HADOOP_VERSION=3
+ARG JMX_VERSION=0.15.0
+ARG GCS_CONNECTOR_VERSION=hadoop3-2.2.0
+ARG GOOGLE_GUAVA=30.0-jre
+# Names and URI's
+ARG GCS_CONNECTOR_NAME=gcs-connector-${GCS_CONNECTOR_VERSION}.jar
+ARG GCS_CONNECTOR_URI=https://storage.googleapis.com/hadoop-lib/gcs/${GCS_CONNECTOR_NAME}
+ARG JMX_JAVAAGENT_JAR_NAME=jmx_prometheus_javaagent-${JMX_VERSION}.jar
+ARG JMX_JAVAAGENT_JAR_URI=https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_VERSION}/${JMX_JAVAAGENT_JAR_NAME}
+ARG SPARK_BIGQUERY_JAR_NAME=spark-bigquery-latest.jar
+ARG SPARK_BIGQUERY_JAR_URI=https://storage.googleapis.com/spark-lib/bigquery/${SPARK_BIGQUERY_JAR_NAME}
+ARG GOOGLE_GUAVA_JAR_NAME=guava-${GOOGLE_GUAVA}.jar
+ARG GOOGLE_GUAVA_JAR_URI=https://repo1.maven.org/maven2/com/google/guava/guava/${GOOGLE_GUAVA}/${GOOGLE_GUAVA_JAR_NAME}
 
 # Switch to user root so we can add addtional jars and configuration files.
 USER root
 
 # Setup dependencies for Google Cloud Storage access.
-RUN rm $SPARK_HOME/jars/guava-14.0.1.jar
-ADD https://repo1.maven.org/maven2/com/google/guava/guava/23.0/guava-23.0.jar $SPARK_HOME/jars
-RUN chmod 644 $SPARK_HOME/jars/guava-23.0.jar
-# Add the connector jar needed to access Google Cloud Storage using the Hadoop FileSystem API.
-ADD https://storage.googleapis.com/hadoop-lib/gcs/gcs-connector-latest-hadoop2.jar $SPARK_HOME/jars
-RUN chmod 644 $SPARK_HOME/jars/gcs-connector-latest-hadoop2.jar
-ADD https://storage.googleapis.com/spark-lib/bigquery/spark-bigquery-latest.jar $SPARK_HOME/jars
-RUN chmod 644 $SPARK_HOME/jars/spark-bigquery-latest.jar
+# RUN ls $SPARK_HOME/jars/ && \
+RUN rm $SPARK_HOME/jars/guava-14.0.1.jar && \
+  echo "Downloading Google guava Jar from ${GOOGLE_GUAVA_JAR_URI}" && \
+  wget -q -O $SPARK_HOME/jars/${GOOGLE_GUAVA_JAR_NAME} ${GOOGLE_GUAVA_JAR_URI} && \
+  chmod 644 $SPARK_HOME/jars/${GOOGLE_GUAVA_JAR_NAME}  &&\
+  # Setup for the Prometheus JMX exporter.
+  # Add the Prometheus JMX exporter Java agent jar for exposing metrics sent to the JmxSink to Prometheus.
+  echo "Downloading JMX exporter from ${JMX_JAVAAGENT_JAR_URI}" && \
+  mkdir -p /prometheus/ && \
+  wget -q -O /prometheus/${JMX_JAVAAGENT_JAR_NAME} ${JMX_JAVAAGENT_JAR_URI} && \
+  chmod 644 /prometheus/${JMX_JAVAAGENT_JAR_NAME}
 
-# Setup for the Prometheus JMX exporter.
-# Add the Prometheus JMX exporter Java agent jar for exposing metrics sent to the JmxSink to Prometheus.
-ADD https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar /prometheus/
-RUN chmod 644 /prometheus/jmx_prometheus_javaagent-0.11.0.jar
+# Add the connector jar needed to access Google Cloud Storage using the Hadoop FileSystem API.
+RUN echo "Downloading GCS Hadoop connector jar from ${GCS_CONNECTOR_URI}" && \
+  wget -q -O $SPARK_HOME/jars/${GCS_CONNECTOR_NAME} ${GCS_CONNECTOR_URI} && \
+  chmod 644 $SPARK_HOME/jars/${GCS_CONNECTOR_NAME} && \
+  echo "Downloading Spark BigQuery jar from ${SPARK_BIGQUERY_JAR_URI}" && \
+  wget -q -O $SPARK_HOME/jars/${SPARK_BIGQUERY_JAR_NAME} ${SPARK_BIGQUERY_JAR_URI} && \
+  chmod 644 $SPARK_HOME/jars/${SPARK_BIGQUERY_JAR_NAME}
 
 USER ${spark_uid}
 
