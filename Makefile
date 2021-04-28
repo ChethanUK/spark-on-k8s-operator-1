@@ -28,7 +28,7 @@ install-sparkctl: | sparkctl/sparkctl-darwin-amd64 sparkctl/sparkctl-linux-amd64
 		sudo cp sparkctl/sparkctl-linux-amd64 /usr/local/bin/sparkctl; \
 		sudo chmod +x /usr/local/bin/sparkctl; \
 	elif [ "$(UNAME)" = "darwin" ]; then \
-		echo "installing macos binary to /usr/local/bin/sparkctl"; \
+		echo "installing macOS binary to /usr/local/bin/sparkctl"; \
 		cp sparkctl/sparkctl-darwin-amd64 /usr/local/bin/sparkctl; \
 		chmod +x /usr/local/bin/sparkctl; \
 	else \
@@ -59,11 +59,12 @@ test: clean
 	go test -v ./... -covermode=atomic
 
 
-it-test: clean
+it-test: clean all
 	@echo "running unit tests"
 	go test -v ./test/e2e/ --kubeconfig "$HOME/.kube/config" --operator-image=gcr.io/spark-operator/spark-operator:v1beta2-1.2.3-3.1.1
 
 vet:
 	@echo "running go vet"
-	go vet ./...
-	# go vet $(REPO)...
+	# echo "Building using $(BUILDER)"
+	# go vet ./...
+	go vet $(REPO)...

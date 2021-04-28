@@ -12,7 +12,7 @@ image:
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 # -- Image pull secrets
 imagePullSecrets: []
@@ -24,8 +24,12 @@ nameOverride: ""
 fullnameOverride: ""
 
 rbac:
-  # -- Create and use `rbac` resources
-  create: true
+  # -- **DEPRECATED** use `createRole` and `createClusterRole`
+  create: false
+  # -- Create and use RBAC `Role` resources
+  createRole: true
+  # -- Create and use RBAC `ClusterRole` resources
+  createClusterRole: true
 
 serviceAccounts:
   spark:
@@ -46,7 +50,7 @@ sparkJobNamespace: ""
 controllerThreads: 10
 
 # -- Operator resync interval. Note that the operator will respond to events (e.g. create, update)
-# unrealted to this setting
+# unrelated to this setting
 resyncInterval: 30
 
 # -- Ingress URL format
